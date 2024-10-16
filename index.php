@@ -7,6 +7,7 @@
 <h1>Agenda Senac</h1>
 <hr>
 <button><a href="adicionarContato.php">ADICIONAR</a></button>
+<button><a href="sair.php">SAIR</a></button>
 <table border="3" width="100%"> 
     <tr>
         <th>ID</th>
