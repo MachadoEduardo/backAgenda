@@ -110,6 +110,25 @@ class Contatos
                 $sql->bindValue(':id', $id);
 
                 $sql->execute();
+                // Inserir imagens
+                if(count($foto) > 0){
+                    for($q = 0; $q < count($foto['tmp_name']); $q++){
+                        $tipo = $foto['type']['$q'];
+                        if(in_array($tipo, array('image/jpeg', 'image/png'))){
+                            $tmpname = md5(time().rand(0, 999)).'.jpg';
+                            move_uploaded_file($foto['tmp_name'][$q], 'img/contatos/'.$tmpname);
+                            list($width_orig, $height_orig) = getimagesize('img/contatos'.$tmpname);
+                            $ratio = $width_orig/$height_orig;
+
+                            $width = 500;
+                            $height = 500;
+
+                            if($width/$height > $ratio){
+                                $width = $height * $ratio;
+                            }
+                        }
+                 }
+                }
                 return TRUE;
             } catch(PDOException $ex){
                 echo 'ERRO'.$ex->getMessage();
