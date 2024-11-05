@@ -125,7 +125,25 @@ class Contatos
 
                             if($width/$height > $ratio){
                                 $width = $height * $ratio;
+                            } else{
+                                $height = $width/$ratio;
                             }
+
+                            $img = imagecreatetruecolor($width, $height);
+                            if($tipo === 'image/jpeg'){
+                                $origi = imagecreatefromjpeg('img/contatos/'.$tmpname);
+
+                            } else if($tipo == 'image/png'){
+                                $origi = imagecreatefrompng('img/contatos/'.$tmpname);
+                            }
+                            imagecopyresampled($img, $origi, 0, 0, 0, 0, $width, $height, $width_orig, $height_orig);
+                            // Imagem salva no servidor
+                            imagejpeg($img, 'img/contatos/'.$tmpname, 80);
+                            // Salvar no banco de dados a url da foto
+                            $sql = $this->con->conectar()->prepare("INSERT INTO foto_contato SET id_contato = :id_contato, url = :url");
+                            $sql->bindValue(':id_contato', $id);
+                            $sql->bindValue(":url", $tmpname);
+                            $sql->execute();
                         }
                  }
                 }
