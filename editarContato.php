@@ -1,19 +1,23 @@
-<?php   
+<?php
+session_start();
 include 'classes/contatos.class.php';
-$contato = new Contatos();
+include 'classes/usuarios.class.php';
 
-if(!empty($_GET['id'])){
-    $id = $_GET['id'];
-    $info = $contato->buscar($id);
-    if(empty($info['email'])){
-        header("Location: /backsenac");
-        exit;
-    }
-} else {
-    header("Location: /backsenac");
-    exit;  
+if (!isset($_SESSION['logado'])) {
+    header("Location: login.php");
+    exit;
 }
-if(!empty($_POST['id'])){
+
+$contato = new Contatos();
+$usuarios = new Usuarios();
+$usuarios->setUsuario($_SESSION['logado']);
+
+if (isset($_GET['id'])) {
+    $id = $_GET['id'];
+    $contatoInfo = $contato->buscar($id);
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nome = $_POST['nome'];
     $telefone = $_POST['telefone'];
     $endereco = $_POST['endereco'];
@@ -21,69 +25,72 @@ if(!empty($_POST['id'])){
     $descricao = $_POST['descricao'];
     $linkedin = $_POST['linkedin'];
     $email = $_POST['email'];
-    if(isset($_FILES['foto'])){
-        $foto = $_FILES['foto'];
-    } else {
-        $foto = array();
-    }
+    $foto = $_FILES['foto'];
 
-    if(!empty($email)){
-        $contato->editar($nome, $telefone, $endereco, $dt_nasc, $descricao, $linkedin, $email, $foto, $_GET['id']);
+    // Handle file upload
+    if (!empty($foto['name'])) {
+        $fotoNome = md5(time().rand(0, 9999)) . '.jpg';
+        $fotoPath = 'img/contatos/' . $fotoNome;
+
+        if (move_uploaded_file($foto['tmp_name'], $fotoPath)) {
+            $contato->editar($nome, $telefone, $endereco, $dt_nasc, $descricao, $linkedin, $email, $fotoNome, $id);
+        }
+    } else {
+        // Update without new photo
+        $contato->editar($nome, $telefone, $endereco, $dt_nasc, $descricao, $linkedin, $email, $contatoInfo['foto'], $id);
     }
-    header("Location: /backsenac");
-}
-if(isset($_GET["id"]) && !empty($_GET['id'])){
-    $info = $contato->getContato($_GET['id']);
-} else {
-    ?>
-    <script type="text/javascript">window.location.href="index.php";</script>
-    <?php 
+    header("Location: index.php");
     exit;
 }
-
 ?>
-
-<h1>EDITAR CONTATO</h1>
-
-<form method="POST" enctype="multipart/form-data"> <!-- Corrigido a tag form -->
-    <input type="hidden" name="id" value="<?php echo $info['id']; ?>"><br>
-    
-    Nome: <br>
-    <input type="text" name="nome" value="<?php echo $info['nome']; ?>"><br><br>
-    
-    Telefone: <br>
-    <input type="text" name="telefone" value="<?php echo $info['telefone']; ?>"><br><br>
-    
-    Endereço: <br>
-    <input type="text" name="endereco" value="<?php echo $info['endereco']; ?>"><br><br>
-    
-    Data de nascimento: <br>
-    <input type="date" name="dt_nasc" value="<?php echo $info['dt_nasc']; ?>"><br><br>
-    
-    Descrição: <br>
-    <input type="text" name="descricao" value="<?php echo $info['descricao']; ?>"><br><br>
-    
-    Linkedin: <br>
-    <input type="text" name="linkedin" value="<?php echo $info['linkedin']; ?>"><br><br>
-    
-    Email: <br>
-    <input type="text" name="email" value="<?php echo $info['email']; ?>"><br><br>
-    
-    Foto: <br>
-    <input type="file" name="foto[]" multiple /><br>
-    
-    <div class="grupo">
-        <div class="cabecalho">Foto Contato</div>
-        <div class="corpo">
-            <?php foreach($info['foto'] as $foto) { ?> <!-- Corrigido o foreach -->
-                <div class="foto_item">
-                    <img src="img/contatos/<?php echo $foto['url']; ?>" alt="Foto do Contato"/> <!-- Corrigido o src -->
-                    <a href="excluir_foto.php?id=<?php echo $foto['id']; ?>">Excluir Imagem</a> <!-- Corrigido o echo -->
-                </div>
-            <?php } ?>
-        </div>
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <title>Editar Contato</title>
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center">Editar Contato</h1>
+        <form method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="id" value="<?php echo $contatoInfo['id']; ?>">
+            <div class="form-group">
+                <label for="nome">Nome:</label>
+                <input type="text" class="form-control" id="nome" name="nome" value="<?php echo $contatoInfo['nome']; ?>" required>
+            </div>
+            <div class="form-group">
+                <label for="telefone">Telefone:</label>
+                <input type="text" class="form-control" id="telefone" name="telefone" value="<?php echo $contatoInfo['telefone']; ?>" required>
+            </div>
+            <div class="form-group">
+                <label for="endereco">Endereço:</label>
+                <input type="text" class="form-control" id="endereco" name="endereco" value="<?php echo $contatoInfo['endereco']; ?>" required>
+            </div>
+            <div class="form-group">
+                <label for="dt_nasc">Data de Nascimento:</label>
+                <input type="date" class="form-control" id="dt_nasc" name="dt_nasc" value="<?php echo $contatoInfo['dt_nasc']; ?>" required>
+            </div>
+            <div class="form-group">
+                <label for="descricao">Descrição:</label>
+                <textarea class="form-control" id="descricao" name="descricao" required><?php echo $contatoInfo['descricao']; ?></textarea>
+            </div>
+            <div class="form-group">
+                <label for="linkedin">LinkedIn:</label>
+                <input type="text" class="form-control" id="linkedin" name="linkedin" value="<?php echo $contatoInfo['linkedin']; ?>" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email:</label>
+                <input type="email" class="form-control" id="email" name="email" value="<?php echo $contatoInfo['email']; ?>" required>
+            </div>
+            <div class="form-group">
+                <label for="foto">Foto:</label>
+                <input type="file" class="form-control" id="foto" name="foto">
+                <img src="img/contatos/<?php echo $contatoInfo['foto']; ?>" alt="Foto atual" width="100">
+            </div>
+            <button type="submit" class="btn btn-primary">Salvar</button>
+        </form>
     </div>
-    
-    <input type="submit" name="btAlterar" value="ALTERAR"/>
-</form>
-
+</body>
+</html>

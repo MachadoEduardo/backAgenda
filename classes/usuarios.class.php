@@ -1,5 +1,5 @@
 <?php
-require 'conexao.class.php';
+require_once 'conexao.class.php';
 class Usuarios
 {
     private $id;
@@ -119,7 +119,7 @@ class Usuarios
 
         if($sql->rowCount() > 0){
             $sql = $sql->fetch();
-            $_SESSION['Logado'] = $sql['id'];
+            $_SESSION['logado'] = $sql['id'];
             return TRUE;
         }
         return FALSE;
