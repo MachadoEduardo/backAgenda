@@ -132,7 +132,7 @@ class Usuarios
 
         if($sql->rowCount() > 0){
             $sql = $sql->fetch();
-            $this->permissoes = explode(',', $sql['permissoes']); // Transforma em array
+            $this->permissoes = explode(', ', $sql['permissoes']); // Transforma em array
         }
     }
     public function getPermissoes(){

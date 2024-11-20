@@ -94,6 +94,11 @@ class Contatos {
         }
         return $array;
     }
+    public function deletar($id){
+        $sql = $this->con->conectar()->prepare("DELETE FROM contatos WHERE id = :id");
+        $sql->bindValue(':id', $id);
+        $sql->execute();
+    }
 
     public function editar($nome, $telefone, $endereco, $dt_nasc, $descricao, $linkedin, $email, $foto, $id) {
         $emailExistente = $this->existeEmail($email);
