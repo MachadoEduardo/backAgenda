@@ -26,19 +26,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $linkedin = $_POST['linkedin'];
     $email = $_POST['email'];
     $foto = $_FILES['foto'];
+    $excluirFoto = isset($_POST['excluir_foto']) ? true : false; // Verifica se o usuário optou por excluir a foto
 
-    // Handle file upload
-    if (!empty($foto['name'])) {
-        $fotoNome = md5(time().rand(0, 9999)) . '.jpg';
-        $fotoPath = 'img/contatos/' . $fotoNome;
-
-        if (move_uploaded_file($foto['tmp_name'], $fotoPath)) {
-            $contato->editar($nome, $telefone, $endereco, $dt_nasc, $descricao, $linkedin, $email, $fotoNome, $id);
+    // Se o usuário escolheu excluir a foto, apaga o arquivo do servidor
+    if ($excluirFoto) {
+        $fotoPath = 'img/contatos/' . $contatoInfo['foto'];
+        if (file_exists($fotoPath)) {
+            unlink($fotoPath); // Deleta a foto do servidor
         }
+        $fotoNome = null; // Remove a referência no banco
     } else {
-        // Update without new photo
-        $contato->editar($nome, $telefone, $endereco, $dt_nasc, $descricao, $linkedin, $email, $contatoInfo['foto'], $id);
+        // Caso contrário, faz o upload de uma nova foto se o usuário enviou uma
+        if (!empty($foto['name'])) {
+            $fotoNome = md5(time() . rand(0, 9999)) . '.jpg';
+            $fotoPath = 'img/contatos/' . $fotoNome;
+
+            if (move_uploaded_file($foto['tmp_name'], $fotoPath)) {
+                // Foto foi carregada com sucesso
+            }
+        } else {
+            // Caso não tenha enviado uma nova foto, mantém a foto atual
+            $fotoNome = $contatoInfo['foto'];
+        }
     }
+
+    // Atualiza os dados do contato, incluindo a foto
+    $contato->editar($nome, $telefone, $endereco, $dt_nasc, $descricao, $linkedin, $email, $fotoNome, $id);
+
     header("Location: index.php");
     exit;
 }
@@ -87,7 +101,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <div class="form-group">
                 <label for="foto">Foto:</label>
                 <input type="file" class="form-control" id="foto" name="foto">
-                <img src="img/contatos/<?php echo $contatoInfo['foto']; ?>" alt="Foto atual" width="100">
+                <img src="img/contatos/<?php echo $contatoInfo['foto']; ?>" alt="Foto atual" width="100"><br>
+                <!-- Checkbox para excluir a foto -->
+                <input type="checkbox" name="excluir_foto" value="1"> Excluir foto atual
             </div>
             <button type="submit" class="btn btn-primary">Salvar</button>
         </form>

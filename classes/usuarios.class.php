@@ -17,7 +17,8 @@ class Usuarios
         $this->con = new Conexao();
     }
 
-    public function existeEmail($email){
+    public function existeEmail($email)
+    {
         $sql = $this->con->conectar()->prepare("SELECT id FROM usuarios WHERE email = :email");
         $sql->bindParam(':email', $email, PDO::PARAM_STR);
         $sql->execute();
@@ -48,7 +49,6 @@ class Usuarios
                 $sql->bindValue(':permissoes', $permissoes);
                 $sql->execute();
                 return TRUE;
-
             } catch (PDOException $ex) {
                 return 'ERRO: ' . $ex->getMessage();
             }
@@ -67,7 +67,7 @@ class Usuarios
             echo "ERRO: " . $ex->getMessage();
         }
     }
-    
+
     public function buscar($id)
     {
         try {
@@ -84,12 +84,13 @@ class Usuarios
         }
     }
 
-    public function editar($nome, $email, $senha, $permissoes, $id){
-        $emailExistente = $this -> existeEmail($email);
-        if(count($emailExistente) > 0 && $emailExistente['id'] != $id){
+    public function editar($nome, $email, $senha, $permissoes, $id)
+    {
+        $emailExistente = $this->existeEmail($email);
+        if (count($emailExistente) > 0 && $emailExistente['id'] != $id) {
             return FALSE;
-        } else{
-            try{
+        } else {
+            try {
                 $sql = $this->con->conectar()->prepare("UPDATE usuarios SET nome = :nome, email = :email, senha = :senha, permissoes = :permissoes WHERE id = :id");
                 $sql->bindValue(':nome', $nome);
                 $sql->bindValue(':email', $email);
@@ -99,50 +100,76 @@ class Usuarios
 
                 $sql->execute();
                 return TRUE;
-            } catch(PDOException $ex){
-                echo 'ERRO'.$ex->getMessage();
-            }     
+            } catch (PDOException $ex) {
+                echo 'ERRO' . $ex->getMessage();
+            }
         }
     }
 
-    public function deletar($id){
+    public function deletar($id)
+    {
         $sql = $this->con->conectar()->prepare("DELETE FROM usuarios WHERE id = :id");
         $sql->bindValue(':id', $id);
         $sql->execute();
     }
 
-    public function fazerLogin($email, $senha){
-        $sql = $this->con->conectar()->prepare("SELECT * FROM usuarios WHERE email = :email AND senha = :senha");
+    public function fazerLogin($email, $senha)
+    {
+        $sql = $this->con->conectar()->prepare("SELECT * FROM usuarios WHERE email = :email");
         $sql->bindValue(":email", $email);
-        $sql->bindValue(":senha", $senha);
         $sql->execute();
 
-        if($sql->rowCount() > 0){
-            $sql = $sql->fetch();
-            $_SESSION['logado'] = $sql['id'];
-            return TRUE;
+        if ($sql->rowCount() > 0) {
+            $usuario = $sql->fetch();
+
+            // Verifica se a senha fornecida corresponde à senha hashada no banco de dados
+            if (password_verify($senha, $usuario['senha'])) {
+                $_SESSION['logado'] = $usuario['id'];
+                return TRUE;
+            }
         }
         return FALSE;
     }
-    public function setUsuario($id){
+    public function setUsuario($id)
+    {
         $this->id = $id;
         $sql = $this->con->conectar()->prepare("SELECT * FROM usuarios WHERE id = :id");
         $sql->bindValue(":id", $id);
         $sql->execute();
 
-        if($sql->rowCount() > 0){
+        if ($sql->rowCount() > 0) {
             $sql = $sql->fetch();
             $this->permissoes = explode(', ', $sql['permissoes']); // Transforma em array
         }
     }
-    public function getPermissoes(){
+    public function getPermissoes()
+    {
         return $this->permissoes;
     }
-    public function temPermissoes($p){
-        if(in_array($p, $this->permissoes)){
+    public function temPermissoes($p)
+    {
+        if (in_array($p, $this->permissoes)) {
             return TRUE;
         } else {
             return FALSE;
         }
+    }
+    public function verificarEmail($email)
+    {
+        $sql = $this->con->conectar()->prepare("SELECT id FROM usuarios WHERE email = :email");
+        $sql->bindValue(":email", $email);
+        $sql->execute();
+        return $sql->rowCount() > 0; // Verifica se encontrou o e-mail
+    }
+
+
+    // Atualiza a senha no banco
+    public function atualizarSenha($email, $novaSenha)
+    {
+        $sql = $this->con->conectar()->prepare("UPDATE usuarios SET senha = :senha WHERE email = :email");
+        $senhaHash = password_hash($novaSenha, PASSWORD_DEFAULT); // Usa o password_hash
+        $sql->bindValue(":senha", $senhaHash); // Armazena a senha criptografada
+        $sql->bindValue(":email", $email);
+        return $sql->execute(); // Executa a atualização
     }
 }
